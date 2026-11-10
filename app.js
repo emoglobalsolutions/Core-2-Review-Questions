@@ -1,58 +1,211 @@
 const QUIZZES = [
- ["Operating Systems","Windows tools, installation, configuration and system utilities."],
- ["Security","Threats, malware, access control, authentication and protection."],
- ["Software Troubleshooting","Common operating system and application problems."],
- ["Operational Procedures","Safety, professionalism, documentation and best practices."],
- ["Mixed Review 1","A mixed review across all Core 2 objective areas."],
- ["Mixed Review 2","A mixed review across all Core 2 objective areas."],
- ["Mixed Review 3","A mixed review across all Core 2 objective areas."],
- ["Mixed Review 4","A mixed review across all Core 2 objective areas."],
- ["Mixed Review 5","A mixed review across all Core 2 objective areas."],
- ["Final Practice Test","A comprehensive mixed practice assessment."]
+  ["Operating Systems", "Windows tools, installation, configuration and system utilities."],
+  ["Security", "Threats, malware, access control, authentication and protection."],
+  ["Software Troubleshooting", "Common operating system and application problems."],
+  ["Operational Procedures", "Safety, professionalism, documentation and best practices."],
+  ["Mixed Review 1", "A mixed review across all Core 2 objective areas."],
+  ["Mixed Review 2", "A mixed review across all Core 2 objective areas."],
+  ["Mixed Review 3", "A mixed review across all Core 2 objective areas."],
+  ["Mixed Review 4", "A mixed review across all Core 2 objective areas."],
+  ["Mixed Review 5", "A mixed review across all Core 2 objective areas."],
+  ["Final Practice Test", "A comprehensive mixed practice assessment."]
 ];
-const PASS_MARK=75, QUESTION_COUNT=100, TIME_LIMIT=90*60;
-let activeQuiz=0, questions=[], answers={}, flagged=new Set(), current=0, seconds=TIME_LIMIT, clock=null;
-const $=id=>document.getElementById(id);
-const bank=Array.isArray(window.QUESTION_BANK)?window.QUESTION_BANK:[];
-function shuffle(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
-function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-function init(){
-  $("quizGrid").innerHTML=QUIZZES.map((q,i)=>`<article class="quiz-card"><p class="eyebrow">QUIZ ${String(i+1).padStart(2,"0")}</p><h3>${q[0]}</h3><p>${q[1]}</p><div class="card-meta">100 questions · 90 minutes · Pass: 75%</div><button class="btn primary start-btn" data-index="${i}" ${bank.length<100?"disabled":""}>Start quiz</button></article>`).join("");
-  document.querySelectorAll(".start-btn").forEach(b=>b.addEventListener("click",()=>startQuiz(Number(b.dataset.index))));
-  $("bankNotice").innerHTML=bank.length>=100?`Question bank ready: ${bank.length} questions available. Each attempt randomly selects 100 unique questions.`:`Question bank setup: <strong>${bank.length} sample questions</strong> are included. Add at least 100 reviewed questions to <code>data/questions.js</code> to enable quiz attempts. The ZIP includes the question format and setup guide; the remaining question bank has not been fabricated.`;
+const PASS_MARK = 75;
+const QUESTION_COUNT = 100;
+const TIME_LIMIT = 90 * 60;
+
+let activeQuiz = 0;
+let activeQuestionCount = 0;
+let questions = [];
+let answers = {};
+let flagged = new Set();
+let current = 0;
+let seconds = TIME_LIMIT;
+let clock = null;
+
+const $ = id => document.getElementById(id);
+const bank = Array.isArray(window.QUESTION_BANK) ? window.QUESTION_BANK : [];
+
+function shuffle(arr) {
+  const shuffled = [...arr];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
 }
-function startQuiz(index){
-  if(bank.length<100)return;
-  activeQuiz=index;questions=shuffle(bank).slice(0,QUESTION_COUNT).map(q=>({...q,options:shuffle(q.options)}));answers={};flagged=new Set();current=0;seconds=TIME_LIMIT;
-  $("quizPanel").classList.remove("hidden");$("resultPanel").classList.add("hidden");$("quizGrid").classList.add("hidden");
-  $("quizTitle").textContent=QUIZZES[index][0];$("quizEyebrow").textContent=`QUIZ ${index+1} · RANDOM QUESTION SET`;
-  render();startTimer();$("quizPanel").scrollIntoView({behavior:"smooth"});
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, character => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[character]);
 }
-function startTimer(){clearInterval(clock);updateTimer();clock=setInterval(()=>{seconds--;updateTimer();if(seconds<=0){clearInterval(clock);submitQuiz(true);}},1000);}
-function updateTimer(){const m=Math.floor(seconds/60),s=seconds%60;$("timer").textContent=`${m}:${String(s).padStart(2,"0")}`;$("timer").style.color=seconds<300?"#c43d45":"#0d233a";}
-function render(){
- const q=questions[current],selected=answers[q.id];
- $("questionCounter").textContent=`Question ${current+1} of ${QUESTION_COUNT}`;
- $("answeredCount").textContent=`${Object.keys(answers).length} answered`;
- $("progressBar").style.width=`${Object.keys(answers).length}%`;
- $("questionArea").innerHTML=`<h3>${escapeHtml(q.question)}</h3>${q.options.map((o,i)=>`<label class="option ${selected===o?"selected":""}"><input type="radio" name="answer" value="${escapeHtml(o)}" ${selected===o?"checked":""}><span><strong>${"ABCD"[i]}.</strong> ${escapeHtml(o)}</span></label>`).join("")}`;
- document.querySelectorAll('input[name="answer"]').forEach(r=>r.addEventListener("change",()=>{answers[q.id]=r.value;render();}));
- $("prevBtn").disabled=current===0;$("nextBtn").textContent=current===99?"Last question":"Next question";
- $("flagBtn").textContent=flagged.has(q.id)?"★ Flagged for review":"☆ Flag for review";
- $("questionNav").innerHTML=questions.map((x,i)=>`<button class="qnav ${i===current?"current":""} ${answers[x.id]?"done":""} ${flagged.has(x.id)?"flagged":""}" data-q="${i}">${i+1}</button>`).join("");
- document.querySelectorAll(".qnav").forEach(b=>b.addEventListener("click",()=>{current=Number(b.dataset.q);render();}));
+
+function init() {
+  const questionTotal = Math.min(QUESTION_COUNT, bank.length);
+  $("quizGrid").innerHTML = QUIZZES.map((quiz, index) => `
+    <article class="quiz-card">
+      <p class="eyebrow">QUIZ ${String(index + 1).padStart(2, "0")}</p>
+      <h3>${quiz[0]}</h3>
+      <p>${quiz[1]}</p>
+      <div class="card-meta">${questionTotal} questions · 90 minutes · ${PASS_MARK}% to pass</div>
+      <button class="btn primary start-btn" data-index="${index}" ${questionTotal ? "" : "disabled"}>Start quiz</button>
+    </article>
+  `).join("");
+
+  document.querySelectorAll(".start-btn").forEach(button => {
+    button.addEventListener("click", () => startQuiz(Number(button.dataset.index)));
+  });
+
+  // Do not show a setup warning: quizzes use the available reviewed questions.
+  $("bankNotice").hidden = true;
 }
-$("prevBtn").addEventListener("click",()=>{if(current>0){current--;render();}});
-$("nextBtn").addEventListener("click",()=>{if(current<99){current++;render();}});
-$("flagBtn").addEventListener("click",()=>{const id=questions[current].id;flagged.has(id)?flagged.delete(id):flagged.add(id);render();});
-$("submitBtn").addEventListener("click",()=>{const unanswered=QUESTION_COUNT-Object.keys(answers).length;if(unanswered&&!confirm(`You have ${unanswered} unanswered questions. Submit anyway?`))return;submitQuiz(false);});
-function submitQuiz(timedOut){
- clearInterval(clock);let correct=0;
- questions.forEach(q=>{if(answers[q.id]===q.answer)correct++;});
- const pct=Math.round(correct/QUESTION_COUNT*100),passed=pct>=PASS_MARK;
- $("quizPanel").classList.add("hidden");$("resultPanel").classList.remove("hidden");
- $("resultPanel").innerHTML=`<p class="eyebrow">QUIZ RESULTS ${timedOut?"· TIME EXPIRED":""}</p><h2>${passed?'<span class="pass">Congratulations — PASS</span>':'<span class="fail">Not passed yet — KEEP PRACTISING</span>'}</h2><div class="result-score">${pct}%</div><p><strong>${correct} / 100 correct</strong> · ${100-correct} incorrect or unanswered · Pass mark: ${PASS_MARK}%</p><div class="progress-wrap"><div style="width:${pct}%;background:${passed?'#16834a':'#c43d45'}"></div></div><button class="btn primary" id="retryBtn">Try another random attempt</button> <button class="btn secondary" id="homeBtn">Back to quizzes</button><h3 style="margin-top:28px">Answer review</h3>${questions.map((q,i)=>{const ok=answers[q.id]===q.answer;return `<article class="result-question"><h4>${i+1}. ${escapeHtml(q.question)} <span class="${ok?'pass':'fail'}">${ok?'✓ Correct':'✗ Incorrect'}</span></h4><p class="small">Your answer: ${escapeHtml(answers[q.id]||"Not answered")}</p><p><strong>Correct answer:</strong> ${escapeHtml(q.answer)}</p><div class="explanation">${escapeHtml(q.explanation||"Review this topic in your study materials.")}</div></article>`;}).join("")}`;
- $("retryBtn").addEventListener("click",()=>startQuiz(activeQuiz));$("homeBtn").addEventListener("click",()=>{$("resultPanel").classList.add("hidden");$("quizGrid").classList.remove("hidden");$("quizGrid").scrollIntoView({behavior:"smooth"});});
- $("resultPanel").scrollIntoView({behavior:"smooth"});
+
+function startQuiz(index) {
+  if (!bank.length) return;
+
+  activeQuiz = index;
+  activeQuestionCount = Math.min(QUESTION_COUNT, bank.length);
+  questions = shuffle(bank).slice(0, activeQuestionCount).map(question => ({
+    ...question,
+    options: shuffle(question.options)
+  }));
+  answers = {};
+  flagged = new Set();
+  current = 0;
+  seconds = TIME_LIMIT;
+
+  $("quizPanel").classList.remove("hidden");
+  $("resultPanel").classList.add("hidden");
+  $("quizGrid").classList.add("hidden");
+  $("quizTitle").textContent = QUIZZES[index][0];
+  $("quizEyebrow").textContent = `QUIZ ${index + 1} · ${activeQuestionCount} QUESTIONS`;
+  render();
+  startTimer();
+  $("quizPanel").scrollIntoView({ behavior: "smooth" });
 }
+
+function startTimer() {
+  clearInterval(clock);
+  updateTimer();
+  clock = setInterval(() => {
+    seconds--;
+    updateTimer();
+    if (seconds <= 0) {
+      clearInterval(clock);
+      submitQuiz(true);
+    }
+  }, 1000);
+}
+
+function updateTimer() {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  $("timer").textContent = `${minutes}:${String(remainingSeconds).padStart(2, "0")}`;
+  $("timer").style.color = seconds < 300 ? "#c43d45" : "#0d233a";
+}
+
+function render() {
+  const question = questions[current];
+  const selected = answers[question.id];
+  const answeredCount = Object.keys(answers).length;
+
+  $("questionCounter").textContent = `Question ${current + 1} of ${activeQuestionCount}`;
+  $("answeredCount").textContent = `${answeredCount} answered`;
+  $("progressBar").style.width = `${answeredCount / activeQuestionCount * 100}%`;
+  $("questionArea").innerHTML = `
+    <h3>${escapeHtml(question.question)}</h3>
+    ${question.options.map(option => `
+      <label class="option ${selected === option ? "selected" : ""}">
+        <input type="radio" name="answer" value="${escapeHtml(option)}" ${selected === option ? "checked" : ""}>
+        <span>${escapeHtml(option)}</span>
+      </label>
+    `).join("")}
+  `;
+
+  document.querySelectorAll('input[name="answer"]').forEach(radio => {
+    radio.addEventListener("change", () => {
+      answers[question.id] = radio.value;
+      render();
+    });
+  });
+
+  $("prevBtn").disabled = current === 0;
+  $("nextBtn").textContent = current === activeQuestionCount - 1 ? "Last question" : "Next question";
+  $("flagBtn").textContent = flagged.has(question.id) ? "★ Flagged for review" : "☆ Flag for review";
+  $("questionNav").innerHTML = questions.map((item, index) => `
+    <button class="qnav ${index === current ? "current" : ""} ${answers[item.id] ? "done" : ""} ${flagged.has(item.id) ? "flagged" : ""}" data-q="${index}">${index + 1}</button>
+  `).join("");
+  document.querySelectorAll(".qnav").forEach(button => {
+    button.addEventListener("click", () => {
+      current = Number(button.dataset.q);
+      render();
+    });
+  });
+}
+
+$("prevBtn").addEventListener("click", () => {
+  if (current > 0) {
+    current--;
+    render();
+  }
+});
+
+$("nextBtn").addEventListener("click", () => {
+  if (current < activeQuestionCount - 1) {
+    current++;
+    render();
+  }
+});
+
+$("flagBtn").addEventListener("click", () => {
+  const id = questions[current].id;
+  flagged.has(id) ? flagged.delete(id) : flagged.add(id);
+  render();
+});
+
+$("submitBtn").addEventListener("click", () => {
+  const unanswered = activeQuestionCount - Object.keys(answers).length;
+  if (unanswered && !confirm(`You have ${unanswered} unanswered questions. Submit anyway?`)) return;
+  submitQuiz(false);
+});
+
+function submitQuiz(timedOut) {
+  clearInterval(clock);
+  let correct = 0;
+  questions.forEach(question => {
+    if (answers[question.id] === question.answer) correct++;
+  });
+
+  const percentage = Math.round(correct / activeQuestionCount * 100);
+  const passed = percentage >= PASS_MARK;
+  $("quizPanel").classList.add("hidden");
+  $("resultPanel").classList.remove("hidden");
+  $("resultPanel").innerHTML = `
+    <p class="eyebrow">QUIZ RESULTS ${timedOut ? "· TIME EXPIRED" : ""}</p>
+    <h2>${passed ? '<span class="pass">Congratulations — PASS</span>' : '<span class="fail">Not passed yet</span>'}</h2>
+    <p class="score">${percentage}%</p>
+    <p>You answered ${correct} of ${activeQuestionCount} questions correctly. ${PASS_MARK}% is required to pass.</p>
+    <div class="result-actions"><button class="btn primary" id="retryBtn">Try again</button><button class="btn secondary" id="homeBtn">Back to quizzes</button></div>
+    <h3>Answer review</h3>
+    <div class="answer-review">${questions.map((question, index) => `
+      <article><strong>${index + 1}. ${escapeHtml(question.question)}</strong>
+      <p class="${answers[question.id] === question.answer ? "pass" : "fail"}">Your answer: ${answers[question.id] ? escapeHtml(answers[question.id]) : "Not answered"}</p>
+      <p>Correct answer: ${escapeHtml(question.answer)}</p>
+      <p>${escapeHtml(question.explanation || "")}</p></article>
+    `).join("")}</div>
+  `;
+  $("retryBtn").addEventListener("click", () => startQuiz(activeQuiz));
+  $("homeBtn").addEventListener("click", () => {
+    $("resultPanel").classList.add("hidden");
+    $("quizGrid").classList.remove("hidden");
+    $("quizGrid").scrollIntoView({ behavior: "smooth" });
+  });
+  $("resultPanel").scrollIntoView({ behavior: "smooth" });
+}
+
 init();
