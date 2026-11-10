@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0d233a">
+  <title>Core 2 Review Questions | SmartLearn Malawi</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><span class="brand-mark">SL</span><div><strong>SmartLearn Malawi</strong><small>Your Digital Learning Partner</small></div></div>
+  <span class="powered">Powered by Emo Global Solutions</span>
+</header>
+<main class="container">
+  <section class="hero">
+    <p class="eyebrow">SMARTLEARN MALAWI · CERTIFICATION PRACTICE</p>
+    <h1>Core 2 Review Questions</h1>
+    <p>CompTIA A+ Core 2 practice and revision. Practice, revise and test your knowledge.</p>
+    <div class="hero-stats"><div><strong>10</strong><span>Quizzes</span></div><div><strong>100</strong><span>Questions per quiz</span></div><div><strong>75%</strong><span>Pass mark</span></div></div>
+  </section>
+  <section class="notice" id="bankNotice" role="status"></section>
+  <section class="section-heading"><div><p class="eyebrow">YOUR LEARNING PATH</p><h2>Choose a quiz</h2></div><span class="pill">75% required to pass</span></section>
+  <section id="quizGrid" class="quiz-grid"></section>
+  <section id="quizPanel" class="quiz-panel hidden">
+    <div class="quiz-head"><div><p class="eyebrow" id="quizEyebrow">QUIZ</p><h2 id="quizTitle">Quiz title</h2></div><div class="timer" id="timer">90:00</div></div>
+    <div class="progress-wrap"><div id="progressBar"></div></div>
+    <div class="quiz-meta"><span id="questionCounter">Question 1 of 100</span><span id="answeredCount">0 answered</span></div>
+    <div id="questionArea"></div>
+    <div class="quiz-actions"><button class="btn secondary" id="prevBtn">Previous</button><button class="btn secondary" id="flagBtn">☆ Flag for review</button><button class="btn primary" id="nextBtn">Next question</button></div>
+    <div class="bottom-actions"><button class="btn danger" id="submitBtn">Submit quiz</button></div>
+    <div id="questionNav" class="question-nav"></div>
+  </section>
+  <section id="resultPanel" class="result-panel hidden"></section>
+  <footer><p>SmartLearn Malawi · Powered by Emo Global Solutions</p><p class="small">Practice materials are for learning. CompTIA and A+ are trademarks of CompTIA, Inc.</p></footer>
+</main>
+<script src="data/questions.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
