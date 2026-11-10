@@ -1,0 +1,13 @@
+{
+  "id": "C2-011",
+  "topic": "Security",
+  "question": "Write a question here?",
+  "options": [
+    "Option A",
+    "Option B",
+    "Option C",
+    "Option D"
+  ],
+  "answer": "Option B",
+  "explanation": "Explain why the answer is correct."
+}
